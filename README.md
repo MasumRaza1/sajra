@@ -1,54 +1,70 @@
-# React + TypeScript + Vite
+# Khandan - Islamic Family Tree Web Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern family tree web application with Islamic features, built with React and TypeScript.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🌳 Interactive family tree visualization
+- 🕌 Islamic calendar integration with accurate Hijri dates
+- 🎉 Special Islamic events and dates tracking
+- 🌙 Dark/Light theme support
+- 📱 PWA support for offline access
+- 🔍 Advanced search and filtering capabilities
+- 🌐 Multi-language support (English, Urdu, Arabic)
+- 📅 Important Islamic dates and events
+- 🤲 Isaal-e-Sawab section for deceased family members
 
-## Expanding the ESLint configuration
+## Islamic Calendar Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Accurate Hijri date conversion
+- Special Islamic dates and events:
+  - Eid ul-Fitr
+  - Eid ul-Adha
+  - Islamic New Year
+  - Shab-e-Meraj
+  - Shab-e-Barat
+  - Ramadan dates
+  - Urs and Fatihiya dates
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Technical Stack
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- PWA Support
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Getting Started
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/MasumRaza1/sajra.git
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Build for production:
+   ```bash
+   npm run build
+   ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Credits
+
+Developed by Masum Raza

@@ -4,6 +4,8 @@ import { familyData } from '../utils/familyData';
 import { findAncestors, findDescendants } from '../utils/familyUtils';
 import { useTheme } from './ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PDFDownloadLink, PDFDownloadLinkProps } from '@react-pdf/renderer';
+import BansouliLetterhead from './BansouliLetterhead';
 
 type FilterType = 'all' | 'generation' | 'deceased';
 
@@ -480,12 +482,28 @@ const HijriCalendar = () => {
   );
 };
 
+// Add this interface near the top of the file, after other type definitions
+interface ManualEntryForm {
+  name: string;
+  elders: Array<{
+    name: string;
+    relation: string;
+  }>;
+  additionalInfo: string;
+}
+
 export default function FamilyTree() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [generationLevel, setGenerationLevel] = useState<number>(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualEntry, setManualEntry] = useState<ManualEntryForm>({
+    name: '',
+    elders: [{ name: '', relation: 'father' }],
+    additionalInfo: ''
+  });
   const { theme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const eldersRef = useRef<HTMLDivElement>(null);
@@ -505,6 +523,12 @@ export default function FamilyTree() {
     const getGeneration = (member: FamilyMember): number => {
       let gen = 0;
       let current = member;
+      
+      // For manual entries, calculate generation based on provided ancestors
+      if (member.isOutsider && member.ancestors) {
+        return 0; // Current member is generation 0
+      }
+
       while (current.fatherId) {
         gen++;
         const father = familyData.find(m => m.id === current.fatherId);
@@ -548,7 +572,18 @@ export default function FamilyTree() {
     return filtered;
   }, [searchTerm, filterType, generationLevel, generations]);
 
-  const ancestors = selectedMember ? findAncestors(selectedMember) : [];
+  // Update ancestors calculation for manual entries
+  const ancestors = useMemo(() => {
+    if (!selectedMember) return [];
+    
+    // For manual entries, use the provided ancestors
+    if (selectedMember.isOutsider && selectedMember.ancestors) {
+      return selectedMember.ancestors;
+    }
+    
+    return findAncestors(selectedMember);
+  }, [selectedMember]);
+
   const descendants = selectedMember ? findDescendants(selectedMember) : [];
 
   // Get deceased members
@@ -558,6 +593,17 @@ export default function FamilyTree() {
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Helper function to get relationship label
+  const getRelationLabel = (index: number) => {
+    switch(index) {
+      case 0: return { hi: 'पिता का नाम', en: "Father's Name" };
+      case 1: return { hi: 'दादा का नाम', en: "Grandfather's Name" };
+      case 2: return { hi: 'परदादा का नाम', en: "Great Grandfather's Name" };
+      case 3: return { hi: 'महा परदादा का नाम', en: "Great Great Grandfather's Name" };
+      default: return { hi: 'पूर्वज का नाम', en: "Ancestor's Name" };
+    }
   };
 
   return (
@@ -685,6 +731,21 @@ export default function FamilyTree() {
                     <option value="generation">पीढ़ी के अनुसार (By Generation)</option>
                     <option value="deceased">मरहूम सदस्य (Deceased Members)</option>
                   </select>
+
+                  {/* Add Manual Entry Button */}
+                  <button
+                    onClick={() => setShowManualForm(true)}
+                    className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 ${
+                      theme === 'dark'
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <span className="block font-medium">नया प्रवेश</span>
+                      <span className="block text-[10px] opacity-90">Manual Entry</span>
+                    </div>
+                  </button>
 
                   {filterType === 'generation' && (
                     <select
@@ -1153,24 +1214,23 @@ export default function FamilyTree() {
                           बुज़ुर्ग (Elders)
                         </div>
                         <div className="space-y-2">
-                          {ancestors.length > 0 ? ancestors.map(ancestor => {
-                            const ancestorGen = Array.from(generations.keys()).find(gen =>
-                              generations.get(gen)?.some(m => m.id === ancestor.id)
-                            );
-                            const selectedGen = Array.from(generations.keys()).find(gen =>
-                              generations.get(gen)?.some(m => m.id === selectedMember.id)
-                            ) || 0;
-                            const genDiff = (selectedGen) - (ancestorGen || 0);
+                          {ancestors.length > 0 ? ancestors.map((ancestor, index) => {
+                            const relationship = selectedMember?.isOutsider
+                              ? index === 0 
+                                ? 'पिता/अब्बा (Father)'
+                                : index === 1 
+                                  ? 'दादा/बाबा (Grandfather)'
+                                  : 'परदादा (Great Grandfather)'
+                              : getRelationship(index + 1, true);
 
                             return (
                               <div
                                 key={ancestor.id}
-                                onClick={() => setSelectedMember(ancestor)}
-                                className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-lg active:scale-98 ${
+                                className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-lg ${
                                   theme === 'dark'
-                                    ? 'bg-gray-800/80 hover:bg-gray-800 border border-gray-700'
-                                    : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
-                                } cursor-pointer transition-all duration-200`}
+                                    ? 'bg-gray-800/80 border border-gray-700'
+                                    : 'bg-gray-50 border border-gray-200'
+                                }`}
                               >
                                 <span className={`font-medium text-sm leading-tight break-words ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
@@ -1182,7 +1242,7 @@ export default function FamilyTree() {
                                     ? 'bg-gray-700 text-gray-300'
                                     : 'bg-gray-200 text-gray-600'
                                 }`}>
-                                  {getRelationship(Math.abs(genDiff), true)}
+                                  {relationship}
                                 </span>
                               </div>
                             );
@@ -1252,6 +1312,313 @@ export default function FamilyTree() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Add PDF Download Button */}
+                  <div className="flex items-center gap-2 mt-4">
+                    {selectedMember && (
+                      <PDFDownloadLink
+                        document={
+                          <BansouliLetterhead
+                            member={{
+                              name: selectedMember.name,
+                              ancestors: ancestors
+                            }}
+                          />
+                        }
+                        fileName={`bansouli-${selectedMember.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`}
+                      >
+                        {({ loading, error }: { loading: boolean; error: Error | null }) => (
+                          <button
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                              error
+                                ? theme === 'dark'
+                                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                                  : 'bg-red-600 hover:bg-red-700 text-white'
+                                : theme === 'dark'
+                                ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-500/50'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-600/50'
+                            } disabled:cursor-not-allowed`}
+                            disabled={loading}
+                            onClick={() => {
+                              if (error) {
+                                console.error('PDF Generation Error:', error);
+                                // Force re-render on error
+                                setSelectedMember({ ...selectedMember });
+                              }
+                            }}
+                          >
+                            {error ? (
+                              <>
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                  />
+                                </svg>
+                                <span>Retry Download</span>
+                              </>
+                            ) : loading ? (
+                              <>
+                                <svg
+                                  className="w-5 h-5 animate-spin"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                                <span>Generating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  />
+                                </svg>
+                                <span>Download Vanshaavali</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </PDFDownloadLink>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Manual Entry Form Modal */}
+        <AnimatePresence>
+          {showManualForm && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowManualForm(false)}
+                className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, y: '100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className={`fixed inset-x-0 bottom-0 z-50 flex flex-col max-h-[85vh] sm:max-h-[90vh] ${
+                  theme === 'dark'
+                    ? 'bg-gray-900/95 border-t border-gray-800'
+                    : 'bg-white/95 border-t border-gray-100'
+                } backdrop-blur-lg shadow-xl ${
+                  theme === 'dark'
+                    ? 'shadow-black/30'
+                    : 'shadow-black/10'
+                } sm:max-w-md sm:mx-auto sm:mb-4 sm:rounded-2xl sm:border`}
+              >
+                <div className={`p-4 ${
+                  theme === 'dark' ? 'bg-gray-900/95' : 'bg-white/95'
+                }`}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className={`text-lg font-bold ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      नया वंशावली फॉर्म
+                      <span className="block text-xs font-normal opacity-75">New Vanshaavali Form</span>
+                    </h2>
+                    <button
+                      onClick={() => setShowManualForm(false)}
+                      className={`p-1.5 rounded-full ${
+                        theme === 'dark'
+                          ? 'hover:bg-gray-800 text-gray-400'
+                          : 'hover:bg-gray-100 text-gray-500'
+                      }`}
+                      aria-label="बंद करें (Close)"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (manualEntry.name && manualEntry.elders[0].name) {
+                      // Create ancestors array from provided elders
+                      const ancestors = manualEntry.elders
+                        .filter(elder => elder.name)
+                        .map((elder, index) => ({
+                          id: `manual-ancestor-${index}-${Date.now()}`,
+                          name: elder.name,
+                          fatherId: index > 0 ? `manual-ancestor-${index-1}-${Date.now()}` : null,
+                          isDeceased: false,
+                          isOutsider: true,
+                          generation: index + 1
+                        }));
+
+                      // Create a manual entry member
+                      const manualMember: FamilyMember = {
+                        id: `manual-${Date.now()}`,
+                        name: manualEntry.name,
+                        fatherId: ancestors.length > 0 ? ancestors[0].id : null,
+                        isOutsider: true,
+                        isDeceased: false,
+                        ancestors: ancestors,
+                        generation: 0,
+                        additionalInfo: manualEntry.additionalInfo
+                      };
+
+                      setSelectedMember(manualMember);
+                      setShowManualForm(false);
+                      setManualEntry({
+                        name: '',
+                        elders: [{ name: '', relation: 'father' }],
+                        additionalInfo: ''
+                      });
+                    }
+                  }}>
+                    <div className="space-y-3">
+                      <div>
+                        <label className={`block text-sm mb-1 ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          <span className="font-medium">आपका नाम</span>
+                          <span className="text-red-500 mx-1">*</span>
+                          <span className="text-xs opacity-75">(Your Name)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={manualEntry.name}
+                          onChange={(e) => setManualEntry(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="अपना पूरा नाम लिखें"
+                          className={`w-full px-3 py-2 text-sm rounded-lg ${
+                            theme === 'dark'
+                              ? 'bg-gray-800 text-white border-gray-700 placeholder-gray-500'
+                              : 'bg-white text-gray-900 border-gray-300 placeholder-gray-400'
+                          } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          required
+                        />
+                      </div>
+
+                      {/* Dynamic Elders List */}
+                      <div className="space-y-2">
+                        {manualEntry.elders.map((elder, index) => (
+                          <div key={index} className="relative">
+                            <label className={`block text-sm mb-1 ${
+                              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
+                              <span className="font-medium">{getRelationLabel(index).hi}</span>
+                              {index === 0 && <span className="text-red-500 mx-1">*</span>}
+                              <span className="text-xs opacity-75 ml-1">({getRelationLabel(index).en})</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={elder.name}
+                              onChange={(e) => {
+                                const newElders = [...manualEntry.elders];
+                                newElders[index].name = e.target.value;
+                                setManualEntry(prev => ({ ...prev, elders: newElders }));
+                              }}
+                              placeholder={`${getRelationLabel(index).hi} लिखें`}
+                              className={`w-full px-3 py-2 text-sm rounded-lg ${
+                                theme === 'dark'
+                                  ? 'bg-gray-800 text-white border-gray-700 placeholder-gray-500'
+                                  : 'bg-white text-gray-900 border-gray-300 placeholder-gray-400'
+                              } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                              required={index === 0}
+                            />
+                          </div>
+                        ))}
+
+                        {/* Add More Button */}
+                        {manualEntry.elders.length < 4 && (
+                          <button
+                            type="button"
+                            onClick={() => setManualEntry(prev => ({
+                              ...prev,
+                              elders: [...prev.elders, { name: '', relation: `generation-${prev.elders.length + 1}` }]
+                            }))}
+                            className={`w-full px-3 py-2 text-sm rounded-lg border-2 border-dashed flex items-center justify-center gap-2 transition-colors duration-200 ${
+                              theme === 'dark'
+                                ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300'
+                                : 'border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700'
+                            }`}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <span>और पूर्वज जोड़ें (Add More Ancestors)</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm mb-1 ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          <span className="font-medium">अतिरिक्त जानकारी</span>
+                          <span className="text-xs opacity-75 ml-1">(वैकल्पिक)</span>
+                          <span className="text-xs opacity-75 ml-1">(Additional Info - Optional)</span>
+                        </label>
+                        <textarea
+                          value={manualEntry.additionalInfo}
+                          onChange={(e) => setManualEntry(prev => ({ ...prev, additionalInfo: e.target.value }))}
+                          placeholder="परिवार के बारे में कोई अन्य जानकारी यहाँ लिखें"
+                          rows={2}
+                          className={`w-full px-3 py-2 text-sm rounded-lg ${
+                            theme === 'dark'
+                              ? 'bg-gray-800 text-white border-gray-700 placeholder-gray-500'
+                              : 'bg-white text-gray-900 border-gray-300 placeholder-gray-400'
+                          } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className={`w-full px-4 py-3 text-sm font-medium rounded-lg ${
+                          theme === 'dark'
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        } transition-colors duration-200 flex items-center justify-center gap-2`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="text-center">
+                          <span className="block font-medium">वंशावली प्रमाण पत्र बनाएं</span>
+                          <span className="block text-[10px] opacity-90">Generate Certificate</span>
+                        </div>
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </motion.div>
             </>
