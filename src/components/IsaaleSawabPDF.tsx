@@ -8,30 +8,96 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   header: {
-    marginBottom: 25,
+    marginBottom: 15,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    width: '100%',
+    position: 'relative',
+  },
+  yearBadge: {
+    backgroundColor: '#f0f0f0',
+    padding: 4,
+    borderRadius: 6,
+    width: 35,
+    border: '1 solid #dddddd',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 20,
+  },
+  yearNumber: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#444444',
+    textAlign: 'center',
+  },
+  yearLabel: {
+    fontSize: 5,
+    fontFamily: 'Helvetica',
+    color: '#666666',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  currentYear: {
+    fontSize: 6,
+    fontFamily: 'Helvetica',
+    color: '#888888',
+    textAlign: 'center',
+    marginTop: 1,
+  },
+  startedText: {
+    position: 'absolute',
+    left: 0,
+    top: 35,
+    fontSize: 7,
+    fontFamily: 'Helvetica',
+    color: '#888888',
+    width: 75,
+    textAlign: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     letterSpacing: 1.5,
     color: '#111111',
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#666666',
     textAlign: 'center',
     fontFamily: 'Helvetica',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  eidUpdateText: {
+    position: 'absolute',
+    right: 0,
+    top: 5,
+    fontSize: 7,
+    color: '#888888',
+    fontFamily: 'Helvetica',
+    textAlign: 'right',
+  },
+  yearText: {
+    fontSize: 12,
+    color: '#444444',
+    textAlign: 'center',
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 15,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 30,
-    marginTop: 15,
-    paddingTop: 15,
+    gap: 25,
+    marginTop: 10,
+    paddingTop: 10,
     borderTop: '0.5 solid #f0f0f0',
   },
   statItem: {
@@ -156,13 +222,35 @@ const IsaaleSawabPDF: React.FC<IsaaleSawabPDFProps> = ({ deceasedMembers }) => {
     return [members.slice(0, midpoint), members.slice(midpoint)];
   };
 
+  const getYearInfo = () => {
+    const startYear = 2024;
+    const currentYear = new Date().getFullYear();
+    const yearDiff = currentYear - startYear + 1;
+    const ordinal = yearDiff === 1 ? 'st' : yearDiff === 2 ? 'nd' : yearDiff === 3 ? 'rd' : 'th';
+    return {
+      number: yearDiff,
+      text: `${yearDiff}${ordinal}`,
+      currentYear: currentYear
+    };
+  };
+
   return (
     <Document>
       {memberGroups.map((group, pageIndex) => (
         <Page key={pageIndex} size="A4" style={styles.page}>
           {pageIndex === 0 && (
             <View style={styles.header}>
-              <Text style={styles.title}>ISAAL·E·SAWAB</Text>
+              <View style={styles.headerContainer}>
+                <View style={styles.yearBadge}>
+                  <Text style={styles.yearNumber}>{getYearInfo().text}</Text>
+                  <Text style={styles.yearLabel}>Year</Text>
+                  <Text style={styles.currentYear}>{getYearInfo().currentYear}</Text>
+                </View>
+                <Text style={styles.startedText}>Started from 2024</Text>
+                <View style={{ width: '100%' }}>
+                  <Text style={styles.title}>ISAAL·E·SAWAB</Text>
+                </View>
+              </View>
               <Text style={styles.subtitle}>
                 List of Deceased Family Members
               </Text>
