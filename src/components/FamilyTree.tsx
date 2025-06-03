@@ -4,7 +4,7 @@ import { familyData } from '../utils/familyData';
 import { findAncestors, findDescendants } from '../utils/familyUtils';
 import { useTheme } from './ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PDFDownloadLink, PDFDownloadLinkProps } from '@react-pdf/renderer';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import BansouliLetterhead from './BansouliLetterhead';
 
 type FilterType = 'all' | 'generation' | 'deceased';
