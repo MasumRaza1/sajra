@@ -256,7 +256,7 @@ Father: ${member.isOutsider ? member.fatherName : member.ancestors?.[0]?.name ||
         {/* Watermarks */}
         <View style={styles.watermarkContainer}>
           <Image 
-            src="/jharkhand-logo.png"
+            src="src/assets/jharkhand-logo.png"
             style={styles.watermarkLogo}
           />
         </View>
@@ -283,7 +283,7 @@ Father: ${member.isOutsider ? member.fatherName : member.ancestors?.[0]?.name ||
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Image 
-              src="/jharkhand-logo.png"
+              src="src/assets/jharkhand-logo.png"
               style={styles.logo}
             />
             <View style={styles.titleContainer}>
