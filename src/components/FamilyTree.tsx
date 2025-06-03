@@ -6,6 +6,7 @@ import { useTheme } from './ThemeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import BansouliLetterhead from './BansouliLetterhead';
+import IsaaleSawabPDF from './IsaaleSawabPDF';
 
 type FilterType = 'all' | 'generation' | 'deceased';
 
@@ -499,6 +500,8 @@ export default function FamilyTree() {
   const [generationLevel, setGenerationLevel] = useState<number>(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [manualEntry, setManualEntry] = useState<ManualEntryForm>({
     name: '',
     elders: [{ name: '', relation: 'father' }],
@@ -586,10 +589,20 @@ export default function FamilyTree() {
 
   const descendants = selectedMember ? findDescendants(selectedMember) : [];
 
-  // Get deceased members
+  // Get deceased members with generation information
   const deceasedMembers = useMemo(() => {
-    return familyData.filter(member => member.isDeceased);
-  }, []);
+    return familyData
+      .filter(member => member.isDeceased)
+      .map(member => {
+        const memberGen = Array.from(generations.keys()).find(gen =>
+          generations.get(gen)?.some(m => m.id === member.id)
+        );
+        return {
+          ...member,
+          generation: memberGen
+        };
+      });
+  }, [generations]);
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -734,7 +747,7 @@ export default function FamilyTree() {
 
                   {/* Add Manual Entry Button */}
                   <button
-                    onClick={() => setShowManualForm(true)}
+                    onClick={() => setShowLoginModal(true)}
                     className={`px-4 py-2 text-sm rounded-xl transition-all duration-200 ${
                       theme === 'dark'
                         ? 'bg-blue-500 hover:bg-blue-600 text-white'
@@ -782,164 +795,181 @@ export default function FamilyTree() {
       <main className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         {filterType === 'deceased' ? (
           <div className="space-y-4 px-2 sm:px-4 py-3 sm:py-6">
-            {/* Isaal-e-Sawab Header - More compact */}
-            <div className="text-center space-y-2">
-              <div className={`mx-auto px-3 py-4 rounded-xl ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border border-gray-700' 
-                  : 'bg-white border border-gray-200'
-              }`}>
-                <h2 className={`text-xl sm:text-2xl font-bold ${
-                  theme === 'dark' 
-                    ? 'text-white' 
-                    : 'text-gray-900'
+            {/* Isaal-e-Sawab Header - Modern Design */}
+            <div className={`relative overflow-hidden rounded-2xl ${
+              theme === 'dark' 
+                ? 'bg-gradient-to-br from-gray-800 to-gray-900' 
+                : 'bg-gradient-to-br from-blue-50 to-indigo-50'
+            }`}>
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0 bg-repeat" style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E")',
+                  backgroundSize: '20px 20px'
+                }} />
+              </div>
+              
+              <div className="relative px-6 py-8 text-center">
+                <h2 className={`text-3xl sm:text-4xl font-bold mb-2 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
                 }`}>
                   ایصال ثواب
                 </h2>
-                <p className={`text-sm mt-1 ${
+                <p className={`text-lg sm:text-xl font-arabic mb-1 ${
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Isaal-e-Sawab
+                </p>
+                <p className={`text-sm ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                 }`}>
                   Remember our departed family members ({deceasedMembers.length})
                 </p>
-              </div>
 
-              {/* Duas Section - With Accordion */}
-              <div className={`mt-4 rounded-xl overflow-hidden ${
-                theme === 'dark' 
-                  ? 'bg-gray-800/50 border border-gray-700' 
-                  : 'bg-white border border-gray-200'
-              }`}>
-                {/* Bismillah */}
-                <div className="text-center p-3 space-y-1.5 border-b border-gray-700">
-                  <div className={`text-xl sm:text-2xl font-arabic ${
-                    theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-                  }`}>
-                    بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                  </div>
-                  <div className={`text-xs sm:text-sm ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    Bismillah ir-Rahman ir-Raheem
-                  </div>
-                  <div className={`text-xs sm:text-sm ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    बिस्मिल्लाह अर-रहमान अर-रहीम
-                  </div>
-                </div>
-
-                {/* Duas in Accordion */}
-                <div className="divide-y divide-gray-700">
-                  {/* Dua 1 */}
-                  <details className="group">
-                    <summary className={`flex items-center justify-between p-3 cursor-pointer ${
-                      theme === 'dark' ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'
-                    }`}>
-                      <span className={`text-base font-medium ${
-                        theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                      }`}>
-                        رَحِمَهُمُ ٱللَّٰهُ
-                      </span>
-                      <svg 
-                        className={`w-4 h-4 transition-transform duration-200 group-open:rotate-180 ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
+                {/* Download PDF Button */}
+                <div className="mt-6">
+                  <PDFDownloadLink
+                    document={<IsaaleSawabPDF deceasedMembers={deceasedMembers} />}
+                    fileName={`isaal-e-sawab-${new Date().toISOString().split('T')[0]}.pdf`}
+                  >
+                    {({ loading, error }) => (
+                      <button
+                        className={`group relative inline-flex items-center justify-center px-8 py-3 text-sm font-medium transition-all duration-200 ${
+                          error
+                            ? theme === 'dark'
+                              ? 'bg-red-500 hover:bg-red-600 text-white'
+                              : 'bg-red-600 hover:bg-red-700 text-white'
+                            : theme === 'dark'
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-500/50'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-600/50'
+                        } disabled:cursor-not-allowed rounded-xl`}
+                        disabled={loading}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </summary>
-                    <div className={`p-3 space-y-1.5 text-sm ${
-                      theme === 'dark' ? 'bg-gray-700/20' : 'bg-gray-50'
-                    }`}>
-                      <div className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                        Rahimahumullah
-                      </div>
-                      <div className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                        रहमहुमुल्लाह
-                      </div>
-                    </div>
-                  </details>
-
-                  {/* Dua 2 */}
-                  <details className="group">
-                    <summary className={`flex items-center justify-between p-3 cursor-pointer ${
-                      theme === 'dark' ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'
-                    }`}>
-                      <span className={`text-base font-medium ${
-                        theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                      }`}>
-                        اَللّٰهُمَّ اغْفِرْ لَهُمْ وَارْحَمْهُمْ
-                      </span>
-                      <svg 
-                        className={`w-4 h-4 transition-transform duration-200 group-open:rotate-180 ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </summary>
-                    <div className={`p-3 space-y-1.5 text-sm ${
-                      theme === 'dark' ? 'bg-gray-700/20' : 'bg-gray-50'
-                    }`}>
-                      <div className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                        Allahummaghfir lahum warhamhum
-                      </div>
-                      <div className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                        अल्लाहुम्मगफिर लहुम वरहमहुम
-                      </div>
-                    </div>
-                  </details>
-
-                  {/* Dua 3 */}
-                  <details className="group">
-                    <summary className={`flex items-center justify-between p-3 cursor-pointer ${
-                      theme === 'dark' ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'
-                    }`}>
-                      <span className={`text-base font-medium ${
-                        theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                      }`}>
-                        اَللّٰهُمَّ نَوِّرْ قُبُورَهُمْ وَاجْعَلِ الْجَنَّةَ مَثْوَاهُمْ
-                      </span>
-                      <svg 
-                        className={`w-4 h-4 transition-transform duration-200 group-open:rotate-180 ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </summary>
-                    <div className={`p-3 space-y-1.5 text-sm ${
-                      theme === 'dark' ? 'bg-gray-700/20' : 'bg-gray-50'
-                    }`}>
-                      <div className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                        Allahumma nawwir quboorahum waj'alil jannata mathwahum
-                      </div>
-                      <div className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                        अल्लाहुम्मा नव्विर क़ुबूरहुम वजअलिल जन्नता मथवाहुम
-                      </div>
-                    </div>
-                  </details>
+                        <span className="absolute inset-0 w-full h-full transition-all duration-200 ease-out transform translate-x-0 -skew-x-12 bg-white/30 group-hover:translate-x-full group-hover:scale-102" />
+                        <span className="absolute inset-0 w-full h-full transition-all duration-200 ease-out transform skew-x-12 bg-white/10 group-hover:translate-x-full group-hover:scale-102" />
+                        <span className="relative flex items-center justify-center">
+                          {error ? (
+                            <>
+                              <svg
+                                className="w-5 h-5 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                              </svg>
+                              <span>Retry Download</span>
+                            </>
+                          ) : loading ? (
+                            <>
+                              <svg
+                                className="w-5 h-5 mr-2 animate-spin"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              <span>Generating PDF...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                className="w-5 h-5 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                              <span>Download Isaal-e-Sawab PDF</span>
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    )}
+                  </PDFDownloadLink>
                 </div>
               </div>
             </div>
 
-            {/* Deceased Members List - More compact */}
+            {/* Duas Section - Modern Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                {
+                  arabic: 'رَحِمَهُمُ ٱللَّٰهُ',
+                  transliteration: 'Rahimahumullah',
+                  translation: 'May Allah have mercy upon them'
+                },
+                {
+                  arabic: 'اَللّٰهُمَّ اغْفِرْ لَهُمْ وَارْحَمْهُمْ',
+                  transliteration: 'Allahummaghfir lahum warhamhum',
+                  translation: 'O Allah, forgive them and have mercy upon them'
+                },
+                {
+                  arabic: 'اَللّٰهُمَّ نَوِّرْ قُبُورَهُمْ وَاجْعَلِ الْجَنَّةَ مَثْوَاهُمْ',
+                  transliteration: "Allahumma nawwir quboorahum waj'alil jannata mathwahum",
+                  translation: 'O Allah, illuminate their graves and make Paradise their abode'
+                }
+              ].map((dua, index) => (
+                <div
+                  key={index}
+                  className={`relative overflow-hidden p-4 rounded-xl transition-all duration-200 ${
+                    theme === 'dark'
+                      ? 'bg-gray-800/80 hover:bg-gray-800 border border-gray-700'
+                      : 'bg-white hover:bg-gray-50 border border-gray-200'
+                  }`}
+                >
+                  <div className="text-center space-y-2">
+                    <p className={`text-xl sm:text-2xl font-arabic leading-relaxed ${
+                      theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                      {dua.arabic}
+                    </p>
+                    <p className={`text-sm font-medium ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {dua.transliteration}
+                    </p>
+                    <p className={`text-xs ${
+                      theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+                    }`}>
+                      {dua.translation}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Deceased Members Grid - Modern Cards */}
             <div className="space-y-2">
               <h3 className={`text-sm font-medium uppercase tracking-wider px-1 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
               }`}>
                 Deceased Members
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {deceasedMembers.map(member => {
                   const memberGen = Array.from(generations.keys()).find(gen =>
                     generations.get(gen)?.some(m => m.id === member.id)
@@ -949,30 +979,36 @@ export default function FamilyTree() {
                     <div
                       key={member.id}
                       onClick={() => setSelectedMember(member)}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                      className={`group flex flex-col p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                         theme === 'dark'
                           ? 'bg-gray-800/50 hover:bg-gray-800 border border-gray-700'
                           : 'bg-white hover:bg-gray-50 border border-gray-200'
-                      } active:scale-[0.98]`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-medium text-sm truncate ${
-                          theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
-                        }`}>
-                          {member.name}
-                        </div>
-                        <div className={`text-xs mt-0.5 ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          Generation {memberGen}
-                        </div>
-                      </div>
-                      <div className={`shrink-0 text-xs px-2 py-1 rounded-full ${
+                      } hover:shadow-lg ${
                         theme === 'dark'
-                          ? 'bg-gray-700/50 text-gray-300'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        पीढ़ी {memberGen}
+                          ? 'hover:shadow-black/20'
+                          : 'hover:shadow-black/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium truncate ${
+                            theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                          }`}>
+                            {member.name}
+                          </div>
+                          <div className={`text-xs mt-1 ${
+                            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            Generation {memberGen}
+                          </div>
+                        </div>
+                        <div className={`shrink-0 text-xs px-2.5 py-1 rounded-full ${
+                          theme === 'dark'
+                            ? 'bg-gray-700/50 text-gray-300'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          पीढ़ी {memberGen}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1411,6 +1447,208 @@ export default function FamilyTree() {
                       </PDFDownloadLink>
                     )}
                   </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Login Modal */}
+        <AnimatePresence>
+          {showLoginModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setLoginError('');
+                }}
+                className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, y: '100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className={`fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 w-full sm:w-full sm:max-w-lg ${
+                  theme === 'dark'
+                    ? 'bg-gray-900/95 border-t border-gray-800 sm:border'
+                    : 'bg-white/95 border-t border-gray-200 sm:border'
+                } backdrop-blur-lg shadow-xl sm:rounded-2xl`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Handle bar for mobile */}
+                <div className="flex justify-center sm:hidden">
+                  <div className={`w-12 h-1 my-2 rounded-full ${
+                    theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'
+                  }`} />
+                </div>
+
+                <div className="p-4 sm:p-8">
+                  <div className="sm:flex sm:items-start sm:gap-6 mb-6">
+                    {/* Icon */}
+                    <div className={`hidden sm:flex sm:h-12 sm:w-12 sm:flex-shrink-0 sm:items-center sm:justify-center sm:rounded-xl ${
+                      theme === 'dark' 
+                        ? 'bg-gray-800' 
+                        : 'bg-blue-50'
+                    }`}>
+                      <svg
+                        className={`h-6 w-6 ${
+                          theme === 'dark' 
+                            ? 'text-blue-400' 
+                            : 'text-blue-600'
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+
+                    {/* Title and Description */}
+                    <div className="text-center sm:text-left sm:flex-1">
+                      <h3 className={`text-lg sm:text-xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        एडमिन लॉगिन
+                        <span className="block text-xs sm:text-sm font-normal opacity-75">Admin Login</span>
+                      </h3>
+                      <p className={`text-sm mt-1 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        कृपया अपनी साख दर्ज करें
+                        <span className="block text-xs opacity-75">(Please enter your credentials)</span>
+                      </p>
+                    </div>
+
+                    {/* Close button for desktop */}
+                    <button
+                      onClick={() => {
+                        setShowLoginModal(false);
+                        setLoginError('');
+                      }}
+                      className={`hidden sm:flex p-2 rounded-lg transition-colors duration-200 ${
+                        theme === 'dark'
+                          ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
+                          : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const username = formData.get('username') as string;
+                    const password = formData.get('password') as string;
+
+                    if (username === 'admin' && password === 'Masum@123') {
+                      setShowLoginModal(false);
+                      setLoginError('');
+                      setShowManualForm(true);
+                    } else {
+                      setLoginError('Invalid username or password');
+                    }
+                  }}>
+                    <div className="space-y-4">
+                      <div className="grid sm:grid-cols-4 sm:items-center sm:gap-4">
+                        <label className={`block text-sm font-medium mb-1.5 sm:mb-0 ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          यूजरनेम
+                          <span className="block sm:hidden text-xs opacity-75">(Username)</span>
+                        </label>
+                        <div className="sm:col-span-3">
+                          <input
+                            type="text"
+                            name="username"
+                            required
+                            autoComplete="off"
+                            placeholder="Enter username"
+                            className={`w-full px-4 py-2.5 text-sm rounded-xl ${
+                              theme === 'dark'
+                                ? 'bg-gray-800 text-white border-gray-700 placeholder-gray-500'
+                                : 'bg-white text-gray-900 border-gray-300 placeholder-gray-400'
+                            } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-4 sm:items-center sm:gap-4">
+                        <label className={`block text-sm font-medium mb-1.5 sm:mb-0 ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          पासवर्ड
+                          <span className="block sm:hidden text-xs opacity-75">(Password)</span>
+                        </label>
+                        <div className="sm:col-span-3">
+                          <input
+                            type="password"
+                            name="password"
+                            required
+                            placeholder="Enter password"
+                            className={`w-full px-4 py-2.5 text-sm rounded-xl ${
+                              theme === 'dark'
+                                ? 'bg-gray-800 text-white border-gray-700 placeholder-gray-500'
+                                : 'bg-white text-gray-900 border-gray-300 placeholder-gray-400'
+                            } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          />
+                        </div>
+                      </div>
+
+                      {loginError && (
+                        <div className={`p-3 rounded-lg text-sm text-center ${
+                          theme === 'dark'
+                            ? 'bg-red-500/10 text-red-300'
+                            : 'bg-red-50 text-red-500'
+                        }`}>
+                          अमान्य साख
+                          <span className="block text-xs opacity-75">{loginError}</span>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row-reverse gap-3 mt-6 sm:mt-8">
+                        <button
+                          type="submit"
+                          className={`w-full sm:w-auto sm:min-w-[120px] px-4 py-2.5 text-sm rounded-xl transition-colors duration-200 ${
+                            theme === 'dark'
+                              ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                        >
+                          लॉग इन करें
+                          <span className="block text-[10px] opacity-75">Login</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLoginModal(false);
+                            setLoginError('');
+                          }}
+                          className={`w-full sm:w-auto sm:min-w-[120px] px-4 py-2.5 text-sm rounded-xl transition-colors duration-200 ${
+                            theme === 'dark'
+                              ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          रद्द करें
+                          <span className="block text-[10px] opacity-75">Cancel</span>
+                        </button>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </motion.div>
             </>
