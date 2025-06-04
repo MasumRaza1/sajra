@@ -22,20 +22,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     padding: 4,
     borderRadius: 6,
-    width: 35,
+    width: 65,
     border: '1 solid #dddddd',
     alignItems: 'center',
     position: 'absolute',
     left: 20,
   },
   yearNumber: {
-    fontSize: 10,
+    fontSize: 20,
     fontFamily: 'Helvetica-Bold',
     color: '#444444',
     textAlign: 'center',
   },
   yearLabel: {
-    fontSize: 5,
+    fontSize: 8,
     fontFamily: 'Helvetica',
     color: '#666666',
     textTransform: 'uppercase',
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   currentYear: {
-    fontSize: 6,
+    fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#888888',
     textAlign: 'center',
@@ -51,9 +51,9 @@ const styles = StyleSheet.create({
   },
   startedText: {
     position: 'absolute',
-    left: 0,
-    top: 35,
-    fontSize: 7,
+    left: 15,
+    top: 45,
+    fontSize: 9,
     fontFamily: 'Helvetica',
     color: '#888888',
     width: 75,
@@ -204,7 +204,7 @@ const IsaaleSawabPDF: React.FC<IsaaleSawabPDFProps> = ({ deceasedMembers }) => {
       const v = n % 100;
       return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
-    return `${getOrdinalSuffix(gen)} Gen`;
+    return `${getOrdinalSuffix(gen)} Pidhi`;
   };
 
   const formatName = (name: string) => {
@@ -246,23 +246,23 @@ const IsaaleSawabPDF: React.FC<IsaaleSawabPDFProps> = ({ deceasedMembers }) => {
                   <Text style={styles.yearLabel}>Year</Text>
                   <Text style={styles.currentYear}>{getYearInfo().currentYear}</Text>
                 </View>
-                <Text style={styles.startedText}>Started from 2024</Text>
+                <Text style={styles.startedText}>Saal-e-Ibtida: 2024</Text>
                 <View style={{ width: '100%' }}>
                   <Text style={styles.title}>ISAAL·E·SAWAB</Text>
                 </View>
               </View>
               <Text style={styles.subtitle}>
-                List of Deceased Family Members
+              Khandaan-e-Marhumeen Ki Fehrist
               </Text>
               
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{sortedMembers.length}</Text>
-                  <Text style={styles.statLabel}>Total Members</Text>
+                  <Text style={styles.statLabel}>Kul Marhumeen</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{uniqueGenerations}</Text>
-                  <Text style={styles.statLabel}>Generations</Text>
+                  <Text style={styles.statLabel}>Pithi</Text>
                 </View>
               </View>
             </View>

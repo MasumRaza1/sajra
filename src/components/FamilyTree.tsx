@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import BansouliLetterhead from './BansouliLetterhead';
 import IsaaleSawabPDF from './IsaaleSawabPDF';
+import toast from 'react-hot-toast';
+
 
 type FilterType = 'all' | 'generation' | 'deceased';
 
@@ -833,17 +835,26 @@ export default function FamilyTree() {
                   >
                     {({ loading, error }) => (
                       <button
-                        className={`group relative inline-flex items-center justify-center px-8 py-3 text-sm font-medium transition-all duration-200 ${
-                          error
-                            ? theme === 'dark'
-                              ? 'bg-red-500 hover:bg-red-600 text-white'
-                              : 'bg-red-600 hover:bg-red-700 text-white'
-                            : theme === 'dark'
-                            ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-500/50'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-600/50'
-                        } disabled:cursor-not-allowed rounded-xl`}
-                        disabled={loading}
-                      >
+                      className={`group relative inline-flex items-center justify-center px-8 py-3 text-sm font-medium transition-all duration-200 ${
+                        error
+                          ? theme === 'dark'
+                            ? 'bg-red-500 hover:bg-red-600 text-white'
+                            : 'bg-red-600 hover:bg-red-700 text-white'
+                          : theme === 'dark'
+                          ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-500/50'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-600/50'
+                      } disabled:cursor-not-allowed rounded-xl`}
+                      disabled={loading}
+                      onClick={() => {
+                        if (error) {
+                          console.error('PDF Generation Error:', error);
+                          toast.error('Failed to generate PDF. Please try again.');
+                        } else if (!loading) {
+                          toast.success('Download will start!');
+                        }
+                      }}
+                    >
+                    
                         <span className="absolute inset-0 w-full h-full transition-all duration-200 ease-out transform translate-x-0 -skew-x-12 bg-white/30 group-hover:translate-x-full group-hover:scale-102" />
                         <span className="absolute inset-0 w-full h-full transition-all duration-200 ease-out transform skew-x-12 bg-white/10 group-hover:translate-x-full group-hover:scale-102" />
                         <span className="relative flex items-center justify-center">
@@ -1365,24 +1376,26 @@ export default function FamilyTree() {
                       >
                         {({ loading, error }: { loading: boolean; error: Error | null }) => (
                           <button
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                              error
-                                ? theme === 'dark'
-                                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                                  : 'bg-red-600 hover:bg-red-700 text-white'
-                                : theme === 'dark'
-                                ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-500/50'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-600/50'
-                            } disabled:cursor-not-allowed`}
-                            disabled={loading}
-                            onClick={() => {
-                              if (error) {
-                                console.error('PDF Generation Error:', error);
-                                // Force re-render on error
-                                setSelectedMember({ ...selectedMember });
-                              }
-                            }}
-                          >
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                            error
+                              ? theme === 'dark'
+                                ? 'bg-red-500 hover:bg-red-600 text-white'
+                                : 'bg-red-600 hover:bg-red-700 text-white'
+                              : theme === 'dark'
+                              ? 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-500/50'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-600/50'
+                          } disabled:cursor-not-allowed`}
+                          disabled={loading}
+                          onClick={() => {
+                            if (error) {
+                              console.error('PDF Generation Error:', error);
+                              setSelectedMember({ ...selectedMember });
+                              toast.error('Failed to generate PDF. Please try again.');
+                            } else if (!loading) {
+                              toast.success('Your Vanshaavali is downloading...');
+                            }
+                          }}
+                        >
                             {error ? (
                               <>
                                 <svg

@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
   qrSection: {
     position: 'absolute',
-    top: 15,
+    top: 35,
     right: 30,
     alignItems: 'flex-end',
     display: 'flex',
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     color: '#666666',
     textAlign: 'right',
     fontFamily: 'Helvetica',
-    lineHeight: 1.4,
+    lineHeight: 1.1,
   },
   qrCode: {
     width: 45,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     height: 300,
     top: (841.89 - 300) / 2,  // = 270.945
     left: (595.28 - 300) / 2, // = 147.64
-    opacity: 0.02,
+    opacity: 0.03,
   },
   
   watermarkText: {
@@ -265,6 +265,10 @@ Father: ${member.isOutsider ? member.fatherName : member.ancestors?.[0]?.name ||
         <View style={styles.qrSection}>
           <Text style={styles.qrText}>Reference: {refNumber}</Text>
           <Text style={styles.qrText}>Valid Until: Permanent</Text>
+          <Image 
+            style={styles.qrCode}
+            src={qrCodeUrl}
+          />
          
         </View>
 
@@ -291,10 +295,6 @@ Father: ${member.isOutsider ? member.fatherName : member.ancestors?.[0]?.name ||
               <Text style={styles.subtitle}>Palamu, Jharkhand • 822124</Text>
             </View>
           </View>
-          <Image 
-            style={styles.qrCode}
-            src={qrCodeUrl}
-          />
         </View>
 
         {/* Content */}
