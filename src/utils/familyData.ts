@@ -81,6 +81,7 @@ export const familyData: FamilyMember[] = [
   { id: "78", name: 'Taukeer Raza', fatherId: "68", isDeceased: false },
   { id: "79", name: 'Tauhid Raza', fatherId: "68", isDeceased: false },
   { id: "80", name: 'Tamzid Raza', fatherId: "69", isDeceased: false },
-  { id: "81", name: 'Asad Raza', fatherId: "70", isDeceased: false }
+  { id: "81", name: 'Asad Raza', fatherId: "70", isDeceased: false },
+  { id: "82", name: 'Janab Jamaluddin Ansari Marhoom', fatherId: "46", isDeceased: true }
 ];
 
